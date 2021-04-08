@@ -2,10 +2,14 @@
 This script is used for generate random testing cases
 ''' 
 import random
+import math
 from collections import deque
 from pathlib import Path
 
 NUM_WALKS = pow(2, 16) 
+MAP_SIZES = [16, 64]
+NUM_TRIALS = 30
+NUM_AGENTS = [2, 8, 16]
 
 
 def move(loc, dir):
@@ -115,83 +119,47 @@ def gen_random_starts_and_goals(my_map, num_of_agents, random_walk_steps=NUM_WAL
     return starts, goals
 
 
-def print_mapf_instance(my_map, starts, goals):
-    print('Start locations')
-    print_locations(my_map, starts)
-    print('Goal locations')
-    print_locations(my_map, goals)
-
-
-def print_locations(my_map, locations):
-    starts_map = [[-1 for _ in range(len(my_map[0]))] for _ in range(len(my_map))]
-    for i in range(len(locations)):
-        starts_map[locations[i][0]][locations[i][1]] = i
-    to_print = ''
-    for x in range(len(my_map)):
-        for y in range(len(my_map[0])):
-            if starts_map[x][y] >= 0:
-                to_print += str(starts_map[x][y]) + ' '
-            elif my_map[x][y]:
-                to_print += '@ '
-            else:
-                to_print += '. '
-        to_print += '\n'
-    print(to_print)
-
-
 def save_mapf_instance(filename, my_map, starts, goals):
+
+    mapSize = len(my_map)
+    finalMap = [[False for _ in range(mapSize-2)] for _ in range(mapSize-2)]
+    for i in range(1, mapSize-1):
+        for j in range(1, mapSize-1):
+            finalMap[i-1][j-1] = my_map[i][j]
+
     f = open(filename, 'w')
-    f.write('map\n')
-    for row in my_map:
+    f.write('{row} {col}\n'.format(row = mapSize-2, col = mapSize-2))
+    for row in finalMap:
         for cell in row:
             if cell:
                 f.write('@ ')
             else:
                 f.write('. ')
         f.write('\n')
-    f.write('start locations:\n')
-    for start in starts:
-        f.write("{},{}\n".format(start[0], start[1]))
-    f.write('goal locations:\n')
-    for goal in goals:
-        f.write("{},{}\n".format(goal[0], goal[1]))
+    f.write('{numAgents}\n'.format(numAgents = len(starts)))
+    for i in range(len(starts)):
+        start = starts[i]
+        goal = goals[i]
+        f.write('{} {} {} {}\n'.format(start[0], start[1], goal[0], goal[1]))
     f.close()
 
+# Create testing maps
+for mapIdx in range(len(MAP_SIZES)):
+    mapSize = MAP_SIZES[mapIdx]
+    for agentIdx in range(len(NUM_AGENTS)):
+        numAgents = NUM_AGENTS[agentIdx]
+        if numAgents == max(NUM_AGENTS) and mapSize == min(MAP_SIZES):
+            break
+        for trialIdx in range(NUM_TRIALS):   
+            # Number of obstacles 
+            maxObs = math.floor(mapSize * mapSize / 1.5)
+            numObstacles = random.randint(0, maxObs)
+            # Create map
+            testMap = gen_random_map(mapSize, numObstacles)
+            # Create starts and goals
+            starts, goals = gen_random_starts_and_goals(testMap, numAgents)
 
-def import_mapf_instance(filename):
-    f = Path(filename)
-    if not f.is_file():
-        raise BaseException(filename + " does not exist.")
-    f = open(filename, 'r')
-    line = f.readline()
-    assert line == 'map\n'
-    my_map = []
-    line = f.readline()
-    while line != 'start locations:\n':
-        my_map.append([])
-        for cell in line:
-            if cell == '@':
-                my_map[-1].append(True)
-            elif cell == '.':
-                my_map[-1].append(False)
-        line = f.readline()
+            # Output filename
+            filename = './instances/' + str(mapSize) + '_' + str(numAgents) + '_' + str(trialIdx) + '.txt'
+            save_mapf_instance(filename, testMap, starts, goals)
 
-    starts = []
-    line = f.readline()
-    while line != 'goal locations:\n':
-        line = line[:-1].split(',')
-        assert (len(line) == 2)
-        starts.append((int(line[0]), int(line[1])))
-        line = f.readline()
-
-    goals = []
-    for line in f.readlines():
-        line = line[:-1].split(',')
-        assert (len(line) == 2)
-        goals.append((int(line[0]), int(line[1])))
-
-    f.close()
-
-    assert (len(starts) == len(goals))
-
-    return my_map, starts, goals
