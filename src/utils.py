@@ -1,56 +1,53 @@
 import networkx as nx
+from single_agent_planner import move, is_constrained, get_path
 
-def construct_mdd(cost_minimal_paths):
-    """ 
-    this method returns an mdd graph given all the cost minimal paths
+def construct_mdd(my_map, agent, start, goal, h_values, cost, constraints):
+    '''
+    This method build a single agent mdd
+    '''
+	mdd = nx.DiGraph()
+	h_value = h_values[start_loc]
+	explore = []
+	# build contraint table for agent
+	constraintTable = build_constraint_table(constraints, agent)
 
-    cost_minimal_paths - an array containing all cost minimal paths 
-        e.g. [[(2,1), (3,1), (3,2)],[(2,1), (2,2), (3,3)]]
-    """
-    if len(cost_minimal_paths) == 0:
-        raise BaseException("empty list :- cost-minimal paths.")
+	root = {'loc': start_loc, 'g_val': 0, 'h_val': h_value, 'parent': None, 'timestep':0}
+	explore.append(root)
 
-    for i in range(len(cost_minimal_paths)):
-        if len(cost_minimal_paths[0]) != len(cost_minimal_paths[i]):
-            raise BaseException("size cost minimal paths different for one of the cost-minimal paths")
+	while len(explore) > 0:
+		curr = explore.pop(0)
+		if curr['timestep'] == cost:
+			# Check cuur is goal or not
+			if curr['loc'] == goal_loc:
+				path = get_path(curr)
+				for i in range(len(path) - 1):
+					mdd.add_edge((path[i], i), (path[i+1], i+1))
+			continue
 
-        if cost_minimal_paths[0][0] != cost_minimal_paths[i][0]:
-            raise BaseException("start locations different for one of the cost-minimal paths.")
-    
-    mdd = dict() # acyclic graph 
+		# Expand the current node
+		for dir in range(5):
+			child_loc = move(curr['loc'], dir)
+			# Check whether the child location is outside the map
+			if child_loc[0] < 0 or child_loc[0] >= len(my_map) \
+			or child_loc[1] < 0 or child_loc[1] >= len(my_map[0]):
+				continue
+			# Check whether the child location is an obstacle 
+			if my_map[child_loc[0]][child_loc[1]]:
+				continue
+			# Check whether the child location violates any constraints
+			if is_constrained(curr['loc'], child_loc, curr['timestep'] + 1, constraintTable):
+				continue
+			# Check whether the g_val + h_value is larger than cost
+			if curr['g_val'] + h_values[child_loc] + 1 > cost:
+				continue
 
-    for path in cost_minimal_paths:
-        path_len = len(path)
-        for i in range(path_len):
-            curr_loc = path[i]
-            if(i < path_len-1):
-                next_loc = path[i+1]
-                # check if curr loc in mdd 
-                if curr_loc not in mdd:
-                    mdd[curr_loc] = [next_loc] # create new node
-                else: 
-                    mdd[curr_loc] = list(set(mdd[curr_loc] + [next_loc])) # add children nodes
-            else:
-                # add terminal 
-                mdd[curr_loc] = None
-    return mdd 
-
-def detect_dependency(mdd1, mdd2):
-    """
-    This method makes a joint mdd from mdd1 and mdd2 and returns false if the joint 
-    mdd does not contain goal node; returns true otherwise.
-
-    mdd1 - an mdd for one of the agents 
-    mdd2 - an mdd for another agent 
-    """
-
-    # add dummy terminal veritces
-
-    # construct mdd
-
-    # check if mdd contains goal node
-
-    pass
+			child = {'loc': child_loc,
+					'g_val': curr['g_val'] + 1,
+					'h_val': h_values[child_loc],
+					'parent': curr,
+					'timestep': curr['timestep'] + 1}
+			explore.append(child)
+	return mdd
 
 def merge_mdd(mdd1, mdd2, start1, start2, goal1, goal2):
     '''
