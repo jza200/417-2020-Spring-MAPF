@@ -4,7 +4,7 @@ import random
 import networkx as nx
 from single_agent_planner import compute_heuristics, a_star, get_location, get_sum_of_cost
 from heuristic import compute_CG, compute_DG, compute_WCG
-from utils import update_mdd
+from utils import update_mdd, construct_mdd
 
 
 def detect_collision(path1, path2):
@@ -197,8 +197,15 @@ def paths_violate_constraint(constraint, paths):
                 rst.append(i)
     return rst
 
-def construct_mdds(my_map, num_of_agents,starts, goals, h_values, paths, constraints):
-    pass
+def construct_mdds(my_map, num_of_agents, starts, goals, h_values, paths, constraints):
+    '''
+    This method construct all mdds for each agent
+    '''
+    mdds = []
+	# Construct MDD for every agent
+	for i in range(num_of_agents):
+		mdds.append(construct_mdd(my_map, i, starts[i], goals[i], h_values[i], len(paths[i]) - 1, constraints)) 
+	return mdds
 
 class CBSSolver(object):
     """The high-level search of CBS."""
@@ -270,7 +277,7 @@ class CBSSolver(object):
         # Build initial mdds
         if heuristic != 'None':
             start_construct = timer.time()
-            mdds = construct_mdds()
+            mdds = construct_mdds(self.my_map, self.num_of_agents, self.starts, self.goals, self.heuristics, root['paths'], [])
             root['mdd'] = mdds
             self.push_node(root)
             self.construct_mdd += timer.time() - start_construct

@@ -105,8 +105,47 @@ def compute_EWMVC(weight_dependency_graph):
     '''
     This method compute h_value for WDG
     '''
-    # Wait for team member
-    pass
+    graph = weight_dependency_graph.copy()
+    # Get connected components
+    connected_subgraphs = [graph.subgraph(c) for c in nx.connected_components(graph)]
+
+    EWMVC = 0
+    for component in connected_subgraphs:
+        EWMVC += get_EWMVC_component(component)
+    return EWMVC
+
+def get_EWMVC_component(graph):
+	g = graph.copy()
+	num_of_nodes = nx.number_of_nodes(graph)
+	nodes = nx.nodes(g)
+	possible_values = {}
+	# Get possible values for each agent
+	for node in nodes:
+		possible_values[node] = []
+		maximum = min([g.edges[edge]['weight'] for edge in g.edges(node)])
+		for i in range(maximum + 1):
+			possible_values[node].append(i)
+	value_list = {}
+	best = float('inf')
+	best = bnb(possible_values, value_list, nodes, g, best)	
+	return best
+
+def bnb(possible_values, value_list, nodes, g, best):
+	if len(value_list) == len(possible_values):
+		cost = sum([value for _, value in value_list.items()])
+		return cost
+	else:
+		value_list_copy = value_list.copy()
+		unassigned_nodes = [node for node in nodes if node not in value_list_copy]
+		node = unassigned_nodes[0]
+		for value in possible_values[node]:
+			if isViolated(value_list_copy, g, node, value):
+				continue
+			value_list_copy[node] = value
+			cost = bnb(possible_values, value_list_copy, nodes, g, best)
+			if cost < best:
+				best = cost
+		return best
 
 def isDependent(joint_mdd, goal1, goal2, max_depth):
     '''
