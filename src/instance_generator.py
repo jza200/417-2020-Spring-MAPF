@@ -7,7 +7,7 @@ from collections import deque
 from pathlib import Path
 
 NUM_WALKS = pow(2, 16) 
-MAP_SIZES = [16, 64]
+MAP_SIZES = [14, 62]
 NUM_TRIALS = 30
 NUM_AGENTS = [2, 8, 16]
 
@@ -122,14 +122,9 @@ def gen_random_starts_and_goals(my_map, num_of_agents, random_walk_steps=NUM_WAL
 def save_mapf_instance(filename, my_map, starts, goals):
 
     mapSize = len(my_map)
-    finalMap = [[False for _ in range(mapSize-2)] for _ in range(mapSize-2)]
-    for i in range(1, mapSize-1):
-        for j in range(1, mapSize-1):
-            finalMap[i-1][j-1] = my_map[i][j]
-
     f = open(filename, 'w')
-    f.write('{row} {col}\n'.format(row = mapSize-2, col = mapSize-2))
-    for row in finalMap:
+    f.write('{row} {col}\n'.format(row = mapSize, col = mapSize))
+    for row in my_map:
         for cell in row:
             if cell:
                 f.write('@ ')
@@ -160,6 +155,6 @@ for mapIdx in range(len(MAP_SIZES)):
             starts, goals = gen_random_starts_and_goals(testMap, numAgents)
 
             # Output filename
-            filename = './instances/' + str(mapSize) + '_' + str(numAgents) + '_' + str(trialIdx) + '.txt'
+            filename = './instance/' + str(mapSize + 2) + '_' + str(numAgents) + '_' + str(trialIdx) + '.txt'
             save_mapf_instance(filename, testMap, starts, goals)
 

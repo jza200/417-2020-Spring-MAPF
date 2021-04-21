@@ -3,12 +3,11 @@ import argparse
 import glob
 from pathlib import Path
 from cbs import CBSSolver
-from independent import IndependentSolver
-from prioritized import PrioritizedPlanningSolver
 from visualize import Animation
 from single_agent_planner import get_sum_of_cost
 
 SOLVER = "CBS"
+HEURISTIC = "None"
 
 def print_mapf_instance(my_map, starts, goals):
     print('Start locations')
@@ -77,8 +76,10 @@ if __name__ == '__main__':
                         help='Use batch output instead of animation')
     parser.add_argument('--disjoint', action='store_true', default=False,
                         help='Use the disjoint splitting')
-    parser.add_argument('--solver', type=str, default=SOLVER,
+    parser.add_argument('--solver', type=str, default='CBS',
                         help='The solver to use (one of: {CBS,Independent,Prioritized}), defaults to ' + str(SOLVER))
+    parser.add_argument('--heuristic', type=str, default='None',
+                        help='High level heuristic to use (one of: {None, CG, DG, WDG}), defaults to ' + str(HEURISTIC))
 
     args = parser.parse_args()
 
@@ -94,20 +95,12 @@ if __name__ == '__main__':
         if args.solver == "CBS":
             print("***Run CBS***")
             cbs = CBSSolver(my_map, starts, goals)
-            paths = cbs.find_solution(args.disjoint)
-        elif args.solver == "Independent":
-            print("***Run Independent***")
-            solver = IndependentSolver(my_map, starts, goals)
-            paths = solver.find_solution()
-        elif args.solver == "Prioritized":
-            print("***Run Prioritized***")
-            solver = PrioritizedPlanningSolver(my_map, starts, goals)
-            paths = solver.find_solution()
+            paths = cbs.find_solution(args.disjoint, args.heuristic)
         else:
             raise RuntimeError("Unknown solver!")
 
-        cost = get_sum_of_cost(paths)
-        result_file.write("{},{}\n".format(file, cost))
+        #cost = get_sum_of_cost(paths)
+        #result_file.write("{},{}\n".format(file, cost))
 
 
         if not args.batch:
