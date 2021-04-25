@@ -87,6 +87,7 @@ if __name__ == '__main__':
     result_file = open("results.csv", "w", buffering=1)
 
     for file in sorted(glob.glob(args.instance)):
+        print(file)
 
         print("***Import an instance***")
         my_map, starts, goals = import_mapf_instance(file)
@@ -99,8 +100,8 @@ if __name__ == '__main__':
         else:
             raise RuntimeError("Unknown solver!")
 
-        #cost = get_sum_of_cost(paths)
-        #result_file.write("{},{}\n".format(file, cost))
+        CPU_time, heuristic, construct_MDD_time, update_MDD_time, running_time, sum_cost, expanded_nodes, generated_nodes = cbs.output_result()
+        result_file.write("{},{},{},{},{},{},{},{},{}\n".format(file, CPU_time, heuristic, construct_MDD_time, update_MDD_time, running_time, sum_cost, expanded_nodes, generated_nodes))
 
 
         if not args.batch:
