@@ -1,6 +1,6 @@
 import networkx as nx
 from utils import merge_mdd, reconstruct_mdd
-from cbs import CBSSolver
+import cbs
 
 def compute_CG(mdds, num_of_agents, starts): 
     '''
@@ -95,8 +95,8 @@ def compute_weight_dependency_graph(my_map, dependency_graph, paths, constraints
                         constraint['agent'] = 1
                 starts_2 = [starts[i], starts[j]]
                 goals_2 = [goals[i], goals[j]]
-                cbs = CBSSolver(my_map, starts_2, goals_2)
-                cost, root_paths, root_constraints = cbs.find_solution(disjoint = False, heuristic = 'None', weight = True, constraints = constraints_ij) 
+                cbs_instance = cbs.CBSSolver(my_map, starts_2, goals_2)
+                cost, root_paths, root_constraints = cbs_instance.find_solution(disjoint = False, heuristic = 'None', weight = True, constraints = constraints_ij) 
                 weight = cost - len(paths[i]) - len(paths[j]) + 2
                 g.add_edge(i, j, weight = weight)
     return g
